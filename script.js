@@ -1,10 +1,15 @@
-const allTasks = JSON.parse(localStorage.getItem('tasks')) || [];
+let allTasks = [];
 let valueInput = "";
 let input = null;
 
-window.onload = () => {
+window.onload = async () => {
   input = document.getElementById("addTask");
   input.addEventListener("change", updateValue);
+  const resp = await fetch("http://localhost:8000/allTasks", {
+    method: "GET"
+  })
+  const result = await resp.json();
+  allTasks = result.data;
   render();
 };
 
@@ -12,7 +17,7 @@ const updateValue = (event) => {
   valueInput = event.target.value;
 };
 
-const onClickButton = () => {
+const onClickButton = async () => {
   if (!valueInput) {
     alert("Enter text");
     return;
@@ -22,9 +27,23 @@ const onClickButton = () => {
     isCheck: false,
     isEdit: false
   });
+  const resp = await fetch("http://localhost:8000/createTask", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json;charset=utf-8",
+      "Access-Control-Allow-Origin": "*"
+    },
+    body: JSON.stringify(
+      {
+        text: valueInput,
+        isCheck: false,
+      }
+    )
+  });
+  const result = await resp.json();
+  allTasks = result.data;
   valueInput = "";
   input.value = "";
-  localStorage.setItem('tasks', JSON.stringify(allTasks));
   render();
 };
 
@@ -112,20 +131,33 @@ const onClickDeleteAll = () => {
   const result = confirm("Are you sure?");
   if (!result) return;
   allTasks.splice(0, allTasks.length);
-  localStorage.removeItem("tasks");
   render();
 };
 
-const onChangeCheckbox = (idx) => {
+const onChangeCheckbox = async (idx) => {
   allTasks[idx].isCheck = !allTasks[idx].isCheck;
-  localStorage.setItem('tasks', JSON.stringify(allTasks));
+  delete allTasks[idx].isEdit;
+  await fetch("http://localhost:8000/updateTask", {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json;charset=utf-8",
+      "Access-Control-Allow-Origin": "*"
+    },
+    body: JSON.stringify(
+      allTasks[idx]
+    )
+  });
   render();
 };
 
-const onClickDelete = (idx) => {
-  const result = confirm("Are you sure?");
-  if (result) allTasks.splice(idx, 1);
-  localStorage.setItem('tasks', JSON.stringify(allTasks));
+const onClickDelete = async (idx) => {
+  const answer = confirm("Are you sure?");
+  if (!answer) return;
+  const resp = await fetch(`http://localhost:8000/deleteTask?id=${allTasks[idx].id}`, {
+    method: "DELETE"
+  });
+  const result = await resp.json();
+  allTasks = result.data;
   render();
 };
 
@@ -134,14 +166,23 @@ const onClickEdit = (idx) => {
   render();
 };
 
-const onClickSave = (text, idx) => {
+const onClickSave = async (text, idx) => {
   if (text.length === 0) {
     alert("Enter text");
     return;
   }
   allTasks[idx].text = text;
-  allTasks[idx].isEdit = !allTasks[idx].isEdit;
-  localStorage.setItem('tasks', JSON.stringify(allTasks));
+  delete allTasks[idx].isEdit;
+  await fetch("http://localhost:8000/updateTask", {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json;charset=utf-8",
+      "Access-Control-Allow-Origin": "*"
+    },
+    body: JSON.stringify(
+      allTasks[idx]
+    )
+  });
   render();
 };
 
