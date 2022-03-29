@@ -9,7 +9,7 @@ window.onload = async () => {
     method: "GET"
   })
   const result = await resp.json();
-  allTasks = result.data;
+  allTasks = result;
   render();
 };
 
@@ -22,11 +22,6 @@ const onClickButton = async () => {
     alert("Enter text");
     return;
   }
-  allTasks.push({
-    text: valueInput,
-    isCheck: false,
-    isEdit: false
-  });
   const resp = await fetch("http://localhost:8000/createTask", {
     method: "POST",
     headers: {
@@ -41,7 +36,7 @@ const onClickButton = async () => {
     )
   });
   const result = await resp.json();
-  allTasks = result.data;
+  allTasks.push(result);
   valueInput = "";
   input.value = "";
   render();
@@ -153,11 +148,10 @@ const onChangeCheckbox = async (idx) => {
 const onClickDelete = async (idx) => {
   const answer = confirm("Are you sure?");
   if (!answer) return;
-  const resp = await fetch(`http://localhost:8000/deleteTask?id=${allTasks[idx].id}`, {
+  await fetch(`http://localhost:8000/deleteTask?id=${allTasks[idx]._id}`, {
     method: "DELETE"
   });
-  const result = await resp.json();
-  allTasks = result.data;
+  allTasks.splice(idx, 1);
   render();
 };
 
